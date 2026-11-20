@@ -1,12 +1,49 @@
-# TryHackMe: File and Hash Threat Intel Write-up
+<div align="center">
 
-Room: [File and Hash Threat Intel](https://tryhackme.com/room/fileandhashthreatintel) (SOC Level 1, Threat Analysis Tools)
+# 🕵️ FILE AND HASH THREAT INTEL
 
-Goal: take a suspicious Windows executable, identify it by hash, and enrich it with real threat intelligence platforms (VirusTotal and Hybrid Analysis) instead of relying only on the room's built-in lookup tool. Every screenshot below comes from the real services.
+**`> HASH IT. PIVOT IT. NAME IT.`**
+
+![platform](https://img.shields.io/badge/platform-TryHackMe-00ff41?style=for-the-badge&labelColor=000000)
+![path](https://img.shields.io/badge/path-SOC%20Level%201-00ff41?style=for-the-badge&labelColor=000000)
+![focus](https://img.shields.io/badge/focus-threat%20intel-00ff41?style=for-the-badge&labelColor=000000)
+![status](https://img.shields.io/badge/status-pwned-00ff41?style=for-the-badge&labelColor=000000)
+
+</div>
 
 ---
 
-## 1. Filename and path heuristics
+## `$ whoami`
+
+Write-up of the TryHackMe room [File and Hash Threat Intel](https://tryhackme.com/room/fileandhashthreatintel) (SOC Level 1, Threat Analysis Tools).
+
+Goal: take suspicious Windows executables, identify them by hash, and enrich them with real threat intelligence platforms (VirusTotal and Hybrid Analysis) instead of relying only on the room's built-in lookup tool. Every screenshot below comes from the real services.
+
+## `$ cat samples.txt`
+
+| Sample | What it turned out to be |
+|--------|--------------------------|
+| `payroll.pdf` | Gh0st RAT style trojan disguised as a PDF and as `svchost.dll` (63/71) |
+| `bl0gger.exe` | BlackMoon / FlyStudio trojan, AutoIt packed, sandbox score 100/100 (51/61) |
+| `Challenge.bin.sample` | Akira ransomware (60/68) |
+
+## 📑 Table of contents
+
+- [🔎 1. Filename and path heuristics](#-1-filename-and-path-heuristics)
+- [🔢 2. Hashing the sample](#-2-hashing-the-sample)
+- [🦠 3. VirusTotal](#-3-virustotal)
+- [🧪 4. Hybrid Analysis (sandbox)](#-4-hybrid-analysis-sandbox)
+- [🌳 5. Process tree](#-5-process-tree)
+- [🌐 6. Network indicators](#-6-network-indicators)
+- [🧬 7. Behaviour summary](#-7-behaviour-summary)
+- [🏴 8. Challenge](#-8-challenge-challengebinsample)
+- [🧾 Indicators of compromise](#-indicators-of-compromise)
+- [🧭 MITRE ATT&CK mapping](#-mitre-attck-mapping)
+- [💡 Takeaways](#-takeaways)
+
+---
+
+## 🔎 1. Filename and path heuristics
 
 The lab desktop has a `CTI Files` folder. One file, `payroll.pdf`, stands out immediately:
 
@@ -35,7 +72,7 @@ The **Details** tab of the file Properties shows what it is really pretending to
 
 The version information copies a Windows component: the original filename is `svchost.dll`, a name borrowed from the legitimate Windows service host `svchost.exe`. A genuine PDF has none of this metadata, and the Chinese (Simplified) language does not match a Windows system file. This is **system binary impersonation**.
 
-### Hash and VirusTotal
+### 🔢 Hash and VirusTotal
 
 Hashing the file:
 
@@ -67,7 +104,7 @@ Name and path heuristics are only a first clue. Attackers rename files constantl
 
 ---
 
-## 2. Hashing the sample
+## 🔢 2. Hashing the sample
 
 The second sample, `bl0gger.exe`, was hashed in PowerShell:
 
@@ -92,7 +129,7 @@ Good practice: store hashes in lowercase, and keep the context (where and when i
 
 ---
 
-## 3. VirusTotal
+## 🦠 3. VirusTotal
 
 Searching the SHA-256 on VirusTotal:
 
@@ -108,7 +145,7 @@ A high detection ratio with consistent family naming across vendors is strong ev
 
 ---
 
-## 4. Hybrid Analysis (sandbox)
+## 🧪 4. Hybrid Analysis (sandbox)
 
 The [Hybrid Analysis report](https://hybrid-analysis.com/sample/2672b6688d7b32a90f9153d2ff607d6801e6cbde61f509ed36d0450745998d58) confirms the verdict with behaviour, not just signatures:
 
@@ -126,13 +163,13 @@ The [Hybrid Analysis report](https://hybrid-analysis.com/sample/2672b6688d7b32a9
 
 The `autoit` tag means the executable is a compiled AutoIt script, a common way to pack and hide code. The capa rule name tells us the sample checks for sandbox and antivirus modules, so it tries to detect analysis.
 
-### Antivirus naming
+### 🏷️ Antivirus naming
 
 ![Hybrid Analysis antivirus results](images/05-hybrid-analysis-av-results.png)
 
 Vendor names point to the same family: Sophos `App/Blamon-B`, Varist `W32/BlackMoon.DD`, Zillya `Tool.FlyStudio.Win32.43`, Bitdefender `Gen:Variant.Application.Graftor.484079`. The sample looks like a **BlackMoon** banking-trojan family member built with **FlyStudio**. The long filename that appears in some reports (`..._agent-tesla_amadey_..._smoke-loader.exe`) is a list of YARA matches, not proof that it is all of those families.
 
-### Relationship graph
+### 🕸️ Relationship graph
 
 ![Hybrid Analysis intel graph](images/06-hybrid-analysis-intel-graph.png)
 
@@ -140,7 +177,7 @@ The intel graph links the sample to many related files and indicators. Several `
 
 ---
 
-## 5. Process tree
+## 🌳 5. Process tree
 
 ![Hybrid Analysis process tree](images/07-hybrid-analysis-process-tree.png)
 
@@ -158,7 +195,7 @@ bl0gger.exe (PID 3440)
 
 ---
 
-## 6. Network indicators
+## 🌐 6. Network indicators
 
 ![Hybrid Analysis DNS requests](images/08-hybrid-analysis-dns-requests.png)
 
@@ -173,7 +210,7 @@ bl0gger.exe (PID 3440)
 
 Most of these are Chinese CDN and analytics services, which matches BlackMoon. Caution: CDN domains such as `g.alicdn.com` and `cdn.bootcss.com` also appear in normal traffic, so they are context, not standalone blocking indicators.
 
-### Pivoting on a domain
+### 🔀 Pivoting on a domain
 
 Checking `live.64ma.com` on VirusTotal:
 
@@ -183,7 +220,7 @@ The domain scores **0/92** and is in the top one million sites, but VirusTotal a
 
 ---
 
-## 7. Behaviour summary
+## 🧬 7. Behaviour summary
 
 Observed in the Hybrid Analysis report:
 
@@ -198,7 +235,7 @@ Observed in the Hybrid Analysis report:
 
 ---
 
-## 8. Challenge: `Challenge.bin.sample`
+## 🏴 8. Challenge: `Challenge.bin.sample`
 
 The last task gives an unknown sample, `Challenge.bin.sample` (1,048,576 bytes), and asks to identify it with the same workflow.
 
@@ -229,7 +266,7 @@ From the room's lookup: the file was first **submitted on 2023-07-10 08:22:15** 
 
 ---
 
-## Indicators of compromise
+## 🧾 Indicators of compromise
 
 | Type | Value |
 |------|-------|
@@ -252,7 +289,7 @@ From the room's lookup: the file was first **submitted on 2023-07-10 08:22:15** 
 | Domain | `s22.cnzz.com` |
 | Context only | `g.alicdn.com`, `cdn.bootcss.com`, `videocloud.cn-hangzhou.log.aliyuncs.com` |
 
-## MITRE ATT&CK mapping
+## 🧭 MITRE ATT&CK mapping
 
 Mapped by hand from the behaviours above (the Hybrid Analysis matrix lists many more techniques).
 
@@ -276,7 +313,7 @@ Mapped by hand from the behaviours above (the Hybrid Analysis matrix lists many 
 | Command and Control | T1071.001 Web Protocols |
 | Command and Control | T1571 Non-Standard Port |
 
-## Takeaways
+## 💡 Takeaways
 
 - A file name or type that does not match its content (`payroll.pdf` shown as an application) is an immediate red flag.
 - The hash identifies the file whatever it is called. Hash first, then search it.
@@ -284,3 +321,11 @@ Mapped by hand from the behaviours above (the Hybrid Analysis matrix lists many 
 - Treat vendor family names as hints. Names of YARA matches are not always the real family.
 - Sandboxes have limits: the sample crashed (`werfault.exe`), and it checks for sandboxes, so a clean or partial run is never proof of safety.
 - A domain with a clean score can still be used by malware. Check which files communicate with it.
+
+---
+
+<div align="center">
+
+`exploitcartel` ⚡ `hash-it-pivot-it-name-it`
+
+</div>
