@@ -4,8 +4,8 @@
 
 **`> HASH IT. PIVOT IT. NAME IT.`**
 
-![platform](https://img.shields.io/badge/platform-TryHackMe-00ff41?style=for-the-badge&labelColor=000000)
-![path](https://img.shields.io/badge/path-SOC%20Level%201-00ff41?style=for-the-badge&labelColor=000000)
+![platform](https://img.shields.io/badge/type-hands--on%20lab-00ff41?style=for-the-badge&labelColor=000000)
+![path](https://img.shields.io/badge/role-SOC%20analyst-00ff41?style=for-the-badge&labelColor=000000)
 ![focus](https://img.shields.io/badge/focus-threat%20intel-00ff41?style=for-the-badge&labelColor=000000)
 ![status](https://img.shields.io/badge/status-pwned-00ff41?style=for-the-badge&labelColor=000000)
 
@@ -15,9 +15,9 @@
 
 ## `$ whoami`
 
-Write-up of the TryHackMe room [File and Hash Threat Intel](https://tryhackme.com/room/fileandhashthreatintel) (SOC Level 1, Threat Analysis Tools).
+Write-up of a hands-on lab on file and hash threat intelligence (SOC analyst workflow, threat analysis tools).
 
-Goal: take suspicious Windows executables, identify them by hash, and enrich them with real threat intelligence platforms (VirusTotal and Hybrid Analysis) instead of relying only on the room's built-in lookup tool. Every screenshot below comes from the real services.
+Goal: take suspicious Windows executables, identify them by hash, and enrich them with real threat intelligence platforms (VirusTotal and Hybrid Analysis) instead of relying only on the lab's built-in lookup tool. Every screenshot below comes from the real services.
 
 ## `$ cat samples.txt`
 
@@ -95,7 +95,7 @@ Searching it on VirusTotal:
 - VirusTotal Code insights describe a Remote Access Trojan, likely a **Gh0st RAT** variant: remote command shell through `cmd.exe`, process injection (`CreateRemoteThread`, `WriteProcessMemory`), screen capture, audio recording, webcam monitoring, persistence through Windows services and registry keys, and checks for security products (Kaspersky, 360 Security, Avast).
 - Code insights also mention a C2 IP `121.196.49.217`, port `12358`, and files `flyboy.dat` and `flyboy.log`. These come from an automated summary, so they are leads to verify, not confirmed facts.
 
-The room's sandbox report for this file adds:
+The lab's sandbox report for this file adds:
 
 - **Associated URL** (defanged): `hxxp://121.182.174.27:3000/server.exe`. A raw IP on port 3000 serving an `.exe` is typical of a second stage download.
 - **Extracted strings:** 454 identified by the sandbox.
@@ -262,7 +262,7 @@ Get-FileHash -Algorithm SHA256 .\Challenge.bin.sample
 
 Vendors agree on **Akira ransomware** (for example `Ransom:Win64/Akira`, `Trojan[Ransom]/Win64.Akira`, `Ransomware:Win/Akira.A`). The `long-sleeps`, debugger and CPU-name checks are sandbox and analysis evasion, and `calls-wmi` is the kind of behaviour ransomware uses to delete shadow copies.
 
-From the room's lookup: the file was first **submitted on 2023-07-10 08:22:15** and it drops a ransom note named **`akira_readme.txt`** in every directory it encrypts. The note contains payment instructions and Tor links for negotiation.
+From the lab's lookup: the file was first **submitted on 2023-07-10 08:22:15** and it drops a ransom note named **`akira_readme.txt`** in every directory it encrypts. The note contains payment instructions and Tor links for negotiation.
 
 ---
 
